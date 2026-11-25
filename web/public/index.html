@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plataforma CBS/IBS — Reforma Tributária (LC 214/2025)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-marca">
+      <span class="brasao">₿</span>
+      <div>
+        <h1>Plataforma CBS/IBS</h1>
+        <p>Reforma Tributária do Consumo — LC 214/2025 · Calculadoras oficiais da Receita Federal</p>
+      </div>
+    </div>
+    <div class="topo-status" id="status-rapido" title="Status dos serviços conectados">
+      <span class="dot dot-desconhecido"></span> Verificando…
+    </div>
+  </header>
+
+  <div class="corpo">
+    <nav class="menu" id="menu">
+      <button class="ativo" data-aba="inicio">Início</button>
+      <button data-aba="regime">Calculadora — Regime Geral</button>
+      <button data-aba="simples">Calculadora — Simples Nacional</button>
+      <button data-aba="base">Base de Cálculo Unificada</button>
+      <button data-aba="dados">Dados Abertos</button>
+      <button data-aba="danfse">Emissor DANFSe</button>
+      <button data-aba="api">API do Gateway</button>
+    </nav>
+
+    <main class="conteudo">
+
+      <!-- ===== Início ===== -->
+      <section id="aba-inicio" class="aba ativa">
+        <h2>Painel de serviços</h2>
+        <p class="hint">Estado dos três serviços oficiais orquestrados pela plataforma, em tempo real, via <code>GET /api/health</code>.</p>
+        <div id="painel-health" class="grade-cards"><p class="hint">Carregando…</p></div>
+
+        <h2>Interfaces disponíveis</h2>
+        <div class="grade-cards">
+          <article class="card">
+            <h3>Calculadora — Regime Geral</h3>
+            <p>Cálculo de CBS, IBS e Imposto Seletivo nas operações do regime geral, com observabilidade item a item e memória de cálculo.</p>
+            <button class="link" data-ir="regime">Abrir →</button>
+          </article>
+          <article class="card">
+            <h3>Calculadora — Simples Nacional</h3>
+            <p>Cálculo de CBS e IBS para contribuintes do Simples Nacional, com consulta de atividades por anexo e vigência.</p>
+            <button class="link" data-ir="simples">Abrir →</button>
+          </article>
+          <article class="card">
+            <h3>Base de Cálculo Unificada</h3>
+            <p>Composição das bases (regime geral, IS e Simples Nacional) respeitando a vigência dos componentes por ano.</p>
+            <button class="link" data-ir="base">Abrir →</button>
+          </article>
+          <article class="card">
+            <h3>Dados Abertos</h3>
+            <p>NCM, NBS, classificações tributárias, comunidades legais e alíquotas de referência (União, UF e município).</p>
+            <button class="link" data-ir="dados">Abrir →</button>
+          </article>
+          <article class="card">
+            <h3>Emissor DANFSe</h3>
+            <p>Geração do DANFSe em PDF a partir do XML de uma NFS-e nacional, com opção de canhoto e situação da nota.</p>
+            <button class="link" data-ir="danfse">Abrir →</button>
+          </article>
+        </div>
+
+        <h2>Repositórios integrados</h2>
+        <ul class="lista-fontes">
+          <li><a href="https://github.com/ReceitaFederal/calculadora-rtc-regime-regular" target="_blank" rel="noopener">calculadora-rtc-regime-regular</a> — API Java/Spring (CBS, IBS e IS, regime geral)</li>
+          <li><a href="https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional" target="_blank" rel="noopener">calculadora-rtc-simples-nacional</a> — API Java/Spring (CBS e IBS, Simples Nacional)</li>
+          <li><a href="https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse" target="_blank" rel="noopener">calculadora-rtc-gerador-danfse</a> — Serviço Go de geração de DANFSe em PDF</li>
+        </ul>
+      </section>
+
+      <!-- ===== Regime Geral ===== -->
+      <section id="aba-regime" class="aba">
+        <h2>Calculadora — Regime Geral (CBS · IBS · IS)</h2>
+        <p class="hint">Opera pelo gateway (<code>POST /api/calculo/regime-geral</code>). No modo <b>observabilidade</b>, cada item é calculado mesmo que outros falhem; no modo <b>estrito</b>, a operação inteira falha no primeiro erro (HTTP 422).</p>
+        <div class="toolbar">
+          <label class="troca">Modo
+            <select id="regime-modo">
+              <option value="observabilidade">Observabilidade (erros por item)</option>
+              <option value="estrito">Estrito (falha no 1º erro — HTTP 422)</option>
+            </select>
+          </label>
+          <button id="regime-carregar-exemplo">Carregar exemplo da documentação</button>
+          <label class="troca"><input type="checkbox" id="regime-modo-json" /> Editar JSON manualmente</label>
+        </div>
+        <div id="regime-formulario"></div>
+        <div id="regime-json-lote" class="oculto">
+          <textarea id="regime-json" rows="18" spellcheck="false" placeholder='{"id":"…","versao":"1.0.0","dhFatoGerador":"2027-03-10T10:00:00-03:00","municipio":4314902,"uf":"RS","itens":[…]}'></textarea>
+        </div>
+        <div class="acoes">
+          <button class="primario" id="regime-calcular"> Calcular</button>
+        </div>
+        <div id="regime-resultado"></div>
+      </section>
+
+      <!-- ===== Simples Nacional ===== -->
+      <section id="aba-simples" class="aba">
+        <h2>Calculadora — Simples Nacional (CBS · IBS)</h2>
+        <p class="hint">Opera pelo gateway (<code>POST /api/calculo/simples-nacional</code>) com observabilidade por item.</p>
+        <div class="toolbar">
+          <button id="simples-carregar-exemplo">Carregar exemplo</button>
+          <button id="simples-consultar-atividades">Consultar atividades do Simples</button>
+        </div>
+        <div id="simples-formulario"></div>
+        <div class="acoes">
+          <button class="primario" id="simples-calcular"> Calcular</button>
+        </div>
+        <div id="simples-atividades" class="oculto">
+          <h3>Atividades do Simples Nacional</h3>
+          <div class="inline">
+            <input type="date" id="simples-data" value="2026-01-01" />
+            <input type="text" id="simples-filtro-anexo" placeholder="Anexo (opcional)" />
+            <button id="simples-buscar-atividades">Buscar</button>
+          </div>
+          <div id="simples-atividades-resultado"></div>
+        </div>
+        <div id="simples-resultado"></div>
+      </section>
+
+      <!-- ===== Base unificada ===== -->
+      <section id="aba-base" class="aba">
+        <h2>Base de Cálculo Unificada (NF-e/NFC-e e NFS-e)</h2>
+        <p class="hint">Calcula as bases <b>regime geral</b>, <b>IS</b> e <b>Simples Nacional</b> pela vigência dos componentes no ano do fato gerador (<code>POST /api/calculo/base-unificada</code>).</p>
+        <form id="base-form" class="grade-form">
+          <label>Ano do fato gerador <input type="number" id="base-ano" value="2027" min="2024" max="2100" required /></label>
+          <label>Tipo de documento
+            <select id="base-tipo-doc"><option value="nfe">NF-e (55)</option><option value="nfse">NFS-e</option><option value="nfce">NFC-e (65)</option></select>
+          </label>
+          <label>Natureza
+            <select id="base-natureza"><option value="bem">Bem</option><option value="servico">Serviço</option></select>
+          </label>
+          <label>vProd <input type="number" step="0.01" min="0" value="1000.00" required /></label>
+          <label>vFrete <input type="number" step="0.01" min="0" value="50.00" /></label>
+          <label>vSeg <input type="number" step="0.01" min="0" value="20.00" /></label>
+          <label>vOutro <input type="number" step="0.01" min="0" value="10.00" /></label>
+          <label>vDesc <input type="number" step="0.01" min="0" value="50.00" /></label>
+          <label>vIS <input type="number" step="0.01" min="0" value="30.00" /></label>
+          <label>vPIS <input type="number" step="0.01" min="0" value="9.25" /></label>
+          <label>vCOFINS <input type="number" step="0.01" min="0" value="46.25" /></label>
+          <label>vICMS <input type="number" step="0.01" min="0" value="180.00" /></label>
+          <label>vFCP <input type="number" step="0.01" min="0" value="10.00" /></label>
+        </form>
+        <div class="acoes"><button class="primario" id="base-calcular">Calcular bases</button></div>
+        <div id="base-resultado"></div>
+      </section>
+
+      <!-- ===== Dados abertos ===== -->
+      <section id="aba-dados" class="aba">
+        <h2>Dados Abertos</h2>
+        <p class="hint">Consulta direta às bases oficiais usadas pelas calculadoras (<code>GET /api/dados-abertos/…</code>).</p>
+        <form id="dados-form" class="grade-form">
+          <label>Consulta
+            <select id="dados-endpoint">
+              <option value="situacoes-tributarias/cbs-ibs | data">Situações tributárias (CST) CBS/IBS</option>
+              <option value="classificacoes-tributarias/cbs-ibs/class-trib/*codigo | data">Classificação tributária específica (cClassTrib)</option>
+              <option value="fundamentacoes-legais | data">Fundamentações legais</option>
+              <option value="ncm | codigo,data">NCM</option>
+              <option value="nbs | codigo,data">NBS</option>
+              <option value="aliquota-uniao | data">Alíquota de referência — União</option>
+              <option value="aliquota-uf | uf,data">Alíquota de referência — UF</option>
+              <option value="aliquota-municipio | codigoIbge,data">Alíquota de referência — Município</option>
+            </select>
+          </label>
+          <label>Código / NCM / NBS <input type="text" id="dados-codigo" placeholder="ex.: 10063021" /></label>
+          <label>UF<datalist id="lista-uf"></datalist><input type="text" id="dados-uf" list="lista-uf" placeholder="RS" maxlength="2" /></label>
+          <label>Código IBGE município <input type="text" id="dados-ibge" placeholder="4314902" /></label>
+          <label>Data (AAAA-MM-DD) <input type="date" id="dados-data" value="2027-01-01" /></label>
+        </form>
+        <div class="acoes"><button class="primario" id="dados-consultar">Consultar</button></div>
+        <div id="dados-resultado"></div>
+      </section>
+
+      <!-- ===== DANFSe ===== -->
+      <section id="aba-danfse" class="aba">
+        <h2>Emissor de DANFSe (PDF)</h2>
+        <p class="hint">Envia o XML bruto de uma NFS-e nacional (<code>POST /api/danfse</code>) e recebe o DANFSe em PDF.</p>
+        <form id="danfse-form" class="grade-form">
+          <label>XML da NFS-e
+            <input type="file" id="danfse-arquivo" accept=".xml,text/xml,application/xml" />
+          </label>
+          <label>Situação da nota
+            <select id="danfse-stc">
+              <option value="0">0 — Válida</option>
+              <option value="1">1 — Substituída</option>
+              <option value="2">2 — Cancelada</option>
+            </select>
+          </label>
+          <label class="checkbox"><input type="checkbox" id="danfse-canhoto" checked /> Exibir canhoto no PDF</label>
+        </form>
+        <textarea id="danfse-xml" rows="14" spellcheck="false" placeholder="Cole aqui o XML completo da NFS-e nacional (elemento raiz NFSe)…"></textarea>
+        <div class="acoes">
+          <button class="primario" id="danfse-gerar">Gerar DANFSe (PDF)</button>
+          <a id="danfse-download" class="oculto" download="danfse.pdf">Baixar PDF</a>
+        </div>
+        <div id="danfse-resultado"></div>
+      </section>
+
+      <!-- ===== API ===== -->
+      <section id="aba-api" class="aba">
+        <h2>API do Gateway</h2>
+        <p class="hint">Todas as chamadas abaixo são servidas pelo gateway da plataforma, que encaminha às APIs oficiais.</p>
+        <table class="tabela-api">
+          <thead><tr><th>Método</th><th>Endpoint</th><th>Descrição</th></tr></thead>
+          <tbody id="corpo-tabela-api">
+            <tr><td>GET</td><td>/api/health</td><td>Status agregado dos três serviços</td></tr>
+            <tr><td>POST</td><td>/api/calculo</td><td>Cálculo unificado — campo <code>regime</code>: <code>regime-geral</code> ou <code>simples-nacional</code></td></tr>
+            <tr><td>POST</td><td>/api/calculo/regime-geral?modo=observabilidade|estrito</td><td>Cálculo CBS/IBS/IS do regime geral</td></tr>
+            <tr><td>POST</td><td>/api/calculo/simples-nacional</td><td>Cálculo CBS/IBS do Simples Nacional</td></tr>
+            <tr><td>POST</td><td>/api/calculo/base-unificada?tipo=nfe|nfse</td><td>Base de cálculo unificada NF-e/NFC-e ou NFS-e</td></tr>
+            <tr><td>GET</td><td>/api/calculo/erros?codigo=REG-011|VSN-001</td><td>Descrição de código de erro dos dois regimes</td></tr>
+            <tr><td>GET</td><td>/api/simples/atividades?data=AAAA-MM-DD</td><td>Atividades do Simples Nacional vigentes</td></tr>
+            <tr><td>GET</td><td>/api/simples/atividades/{codigo}?data=AAAA-MM-DD</td><td>Atividade específica do Simples</td></tr>
+            <tr><td>GET</td><td>/api/versao</td><td>Versão da aplicação Simples Nacional e da base</td></tr>
+            <tr><td>GET</td><td>/api/dados-abertos/ncm · nbs · situacoes-tributarias/cbs-ibs · classificacoes-tributarias/cbs-ibs/class-trib/{codigo} · fundamentacoes-legais · aliquota-uniao · aliquota-uf · aliquota-municipio</td><td>Dados abertos oficiais</td></tr>
+            <tr><td>POST</td><td>/api/danfse?stc=0|1|2&canhoto=true|false</td><td>DANFSe em PDF a partir do XML da NFS-e</td></tr>
+            <tr><td>ANY</td><td>/api/upstream/{regime|simples|danfse}/…</td><td>Passagem direta parametrizada a qualquer caminho de um serviço integrado</td></tr>
+          </tbody>
+        </table>
+        <h2>Exemplo</h2>
+        <pre id="example-curl" class="bloco-codigo">curl -s http://localhost:8085/api/calculo/regime-geral \
+  -H 'Content-Type: application/json' \
+  -d @operacao.json | jq</pre>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="rodape">
+    <p>Plataforma de apoio — não substitui as fontes oficiais. Calculadoras: <a href="https://github.com/ReceitaFederal" target="_blank" rel="noopener">ReceitaFederal</a> · Reforma Tributária do Consumo — <a href="https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm" target="_blank" rel="noopener">LC 214/2025</a></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
