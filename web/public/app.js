@@ -22,20 +22,26 @@ async function apiPost(path, corpo, contentType = "application/json") {
     headers: { "content-type": contentType, accept: "*/*" },
     body: typeof corpo === "string" ? corpo : JSON.stringify(corpo),
   });
-  const texto = await resposta.text();
   const tipo = resposta.headers.get("content-type") ?? "";
   if (tipo.includes("json")) {
+    const texto = await resposta.text();
     let dados = null;
     try { dados = JSON.parse(texto); } catch { /* não-JSON */ }
     if (!resposta.ok) {
-      throw new Error(dados?.erro || dados?.mensagem || `HTTP ${resposta.status}`);
+      const erro = new Error(dados?.erro || dados?.mensagem || `HTTP ${resposta.status}`);
+      erro.status = resposta.status;
+      erro.dados = dados;
+      throw erro;
     }
     return { resposta, dados };
   }
   if (!resposta.ok) {
-    throw new Error(`HTTP ${resposta.status}: ${texto.slice(0, 200)}`);
+    const textoErro = await resposta.clone().text();
+    const erro = new Error(`HTTP ${resposta.status}: ${textoErro.slice(0, 200)}`);
+    erro.status = resposta.status;
+    throw erro;
   }
-  return { resposta, blob: new Blob([texto], { type: tipo || "application/octet-stream" }) };
+  return { resposta, blob: await resposta.blob() };
 }
 
 function num(valor) {
@@ -473,12 +479,12 @@ $("#regime-calcular").addEventListener("click", async (e) => {
   const alvo = $("#regime-resultado");
   botao.disabled = true;
   alvo.innerHTML = "";
-  const modo = $("#regime-modo-json").checked ? "estrito" : "observabilidade";
+  const modo = $("#regime-modo").value;
   try {
     let corpo;
     if ($("#regime-modo-json").checked) {
       corpo = JSON.parse($("#regime-json").value);
-      const { resposta, dados } = await apiPost(`/api/calculo/regime-geral?modo=observabilidade`, corpo);
+      const { dados } = await apiPost(`/api/calculo/regime-geral?modo=${modo}`, corpo);
       renderResultadoObservabilidade(alvo, dados);
     } else {
       const operacao = formRegime.construirOperacao();
@@ -487,7 +493,16 @@ $("#regime-calcular").addEventListener("click", async (e) => {
       renderResultadoObservabilidade(alvo, dados);
     }
   } catch (erro) {
-    caixaErro("#regime-resultado", erro.message);
+    if (erro.status === 422 && erro.dados?.erros) {
+      renderResultadoObservabilidade(alvo, { objetos: [], total: {}, errosOperacao: erro.dados.erros });
+      const bloco = alvo.querySelector(".resultado-bloco");
+      if (bloco) {
+        bloco.prepend(el("h3", {}, "Operação rejeitada no modo estrito (HTTP 422)"));
+        for (const e of erro.dados.erros) bloco.appendChild(el("div", { class: "caixa-erro" }, `${e.code ?? ""} — ${e.detail ?? e.title ?? "erro"}`));
+      }
+    } else {
+      caixaErro("#regime-resultado", erro.message);
+    }
   } finally {
     botao.disabled = false;
   }

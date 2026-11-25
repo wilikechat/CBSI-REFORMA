@@ -81,6 +81,12 @@
         <h2>Calculadora — Regime Geral (CBS · IBS · IS)</h2>
         <p class="hint">Opera pelo gateway (<code>POST /api/calculo/regime-geral</code>). No modo <b>observabilidade</b>, cada item é calculado mesmo que outros falhem; no modo <b>estrito</b>, a operação inteira falha no primeiro erro (HTTP 422).</p>
         <div class="toolbar">
+          <label class="troca">Modo
+            <select id="regime-modo">
+              <option value="observabilidade">Observabilidade (erros por item)</option>
+              <option value="estrito">Estrito (falha no 1º erro — HTTP 422)</option>
+            </select>
+          </label>
           <button id="regime-carregar-exemplo">Carregar exemplo da documentação</button>
           <label class="troca"><input type="checkbox" id="regime-modo-json" /> Editar JSON manualmente</label>
         </div>
@@ -90,7 +96,6 @@
         </div>
         <div class="acoes">
           <button class="primario" id="regime-calcular"> Calcular</button>
-          <button class="perigo oculto" id="regime-limpar-erros">Limpar erros</button>
         </div>
         <div id="regime-resultado"></div>
       </section>

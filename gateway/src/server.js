@@ -98,7 +98,13 @@ function isDadosAbertosRest(rest) {
 
 async function route(req, res) {
   const url = new URL(req.url, "http://gateway.local");
-  const pathname = decodeURIComponent(url.pathname);
+  let pathname;
+  try {
+    pathname = decodeURIComponent(url.pathname);
+  } catch {
+    json(res, 400, { erro: "URL malformada" });
+    return;
+  }
   const method = req.method.toUpperCase();
 
   baseHeaders(res);
